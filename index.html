@@ -1,1 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.85">
+    <title>Рейтинг Силомера</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Orbitron', sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #1a1a1a, #333);
+            color: #fff;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #ffcc00;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+        .table-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.9);
+            overflow-x: auto;
+        }
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            color: #fff;
+        }
+        th, td { 
+            padding: 15px; 
+            text-align: center;
+            border: 1px solid #ffcc00;
+        }
+        th {
+            background: #ffcc66;
+            color: #000;
+            font-size: 18px;
+            border-radius: 10px 10px 0 0;
+        }
+        td {
+            background: #222;
+        }
+        .gold { background: gold !important; color: black; font-weight: bold; }
+        .silver { background: #c0c0c0 !important; color: black; font-weight: bold; }
+        .bronze { background: #cd7f32 !important; color: black; font-weight: bold; }
+        .top-9 { background: rgba(255, 204, 0, 0.1); }
+        .highlight { background: rgba(255, 204, 0, 0.2); }
+        tr {
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        tr:hover {
+            transform: scale(1.02);
+            background: rgba(255, 204, 0, 0.3);
+        }
+        .whatsapp-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #25D366;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px 20px;
+            border: 2px solid #128C7E;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 0 10px #128C7E;
+        }
+        .whatsapp-button:hover {
+            background: #128C7E;
+            box-shadow: 0 0 15px #25D366;
+        }
+        .filter-buttons {
+            margin-bottom: 20px;
+        }
+        .filter-button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background: #ffcc00;
+            color: black;
+            font-weight: bold;
+            box-shadow: 0 0 5px #ffcc00;
+        }
+        .filter-button:hover {
+            background: #ffdb4d;
+        }
+        @media (max-width: 600px) {
+            h1, h2 {
+                font-size: 20px;
+            }
+            .filter-button, .whatsapp-button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            th, td {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🏆 Рейтинг Силомера 🏆</h1>
+    
+    <div class="filter-buttons">
+        <button class="filter-button" onclick="loadRanking('Лист1')">За всё время</button>
+        <button class="filter-button" onclick="loadRanking('Лист2')">За месяц</button>
+    </div>
+    
+    <h2>Таблица рекордов</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                <th style="width: 30px;">Место</th>
+                <th style="width: auto;">Имя</th>
+                <th style="width: 70px;">Результат</th>
+                </tr>
+            </thead>
+            <tbody id="rankingTable"></tbody>
+        </table>
+    </div>
+    <button class="whatsapp-button" onclick="sendToWhatsApp()">📩 Отправить результат</button>
+
+    <script>
+        async function loadRanking(sheetName) {
+            const sheetUrl = `https://docs.google.com/spreadsheets/d/1N33RD08kPghWrUZwMlPc_K7VI5eGTYhGTRzJfgf8hkM/gviz/tq?tqx=out:json&sheet=${sheetName}`;
+            try {
+                const response = await fetch(sheetUrl);
+                const text = await response.text();
+                const json = JSON.parse(text.substring(47, text.length - 2));
+                let rows = json.table.rows;
+                
+                rows = rows.map(row => ({ name: row.c[0]?.v, score: parseInt(row.c[1]?.v) }))
+                           .filter(row => row.name && !isNaN(row.score))
+                           .sort((a, b) => b.score - a.score);
+
+                const tableBody = document.getElementById('rankingTable');
+                tableBody.innerHTML = '';
+                
+                rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    let rowClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : (index >= 3 && index <= 9) ? 'highlight' : '';
+                    
+                    tr.innerHTML = `
+                        <td class="${rowClass}">${index + 1}</td>
+                        <td>${row.name}</td>
+                        <td>${row.score}</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+        
+        document.addEventListener("DOMContentLoaded", () => loadRanking('Лист1'));
+
+        function sendToWhatsApp() {
+            const phoneNumber = '77088246287';
+            const message = 'Привет! Отправь мне Имя, Результат, Фото';
+            const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+            window.open(whatsappURL, "_blank");
+        }
+    </script>
+</body>
+</html>
 
